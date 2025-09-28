@@ -1,13 +1,24 @@
-import { FileText, Download, FileDown } from 'lucide-react';
+import { FileText, Download, FileDown, Loader2, CheckCircle } from 'lucide-react';
 import type { PRDDocument } from '../../domain/entities/PRDDocument.ts';
+import ReactMarkdown from 'react-markdown';
 import './PRDPreview.css';
 
 interface PRDPreviewProps {
   prd: PRDDocument | null;
+  isGenerating?: boolean;
+  progress?: number;
+  currentSection?: string;
 }
 
-export function PRDPreview({ prd }: PRDPreviewProps) {
-  if (!prd) {
+export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSection }: PRDPreviewProps) {
+  // Log only essential info
+  if (prd) {
+    console.log('[PRDPreview] Displaying PRD with', prd.sections.length, 'sections');
+  } else {
+    console.log('[PRDPreview] No PRD yet, isGenerating:', isGenerating);
+  }
+
+  if (!prd && !isGenerating) {
     return (
       <div className="prd-empty-state">
         <div className="empty-state-content">
@@ -23,37 +34,85 @@ export function PRDPreview({ prd }: PRDPreviewProps) {
     );
   }
 
+  // Show loading state while generating and no content yet
+  if (isGenerating && !prd) {
+    return (
+      <div className="prd-empty-state">
+        <div className="empty-state-content generating">
+          <div className="empty-state-icon spinning">
+            <Loader2 size={48} strokeWidth={1.5} />
+          </div>
+          <h3>Starting Generation...</h3>
+          <p>Analyzing your requirements and preparing the PRD structure</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="prd-preview">
       <div className="prd-header">
-        <h1>{prd.title}</h1>
+        <div className="prd-title-container">
+          <h1>{prd.title}</h1>
+          {isGenerating ? (
+            <span className="draft-badge">DRAFT</span>
+          ) : (
+            <span className="final-badge">FINAL VERSION</span>
+          )}
+        </div>
         <div className="prd-meta">
           <span>Version {prd.version}</span>
           <span>•</span>
           <span>Updated {prd.updatedAt.toLocaleDateString()}</span>
+          {isGenerating && (
+            <>
+              <span>•</span>
+              <span className="generating-badge">Live Updating...</span>
+            </>
+          )}
         </div>
       </div>
 
       <div className="prd-content">
         <div className="prd-sections-container">
           <div className="prd-sections">
-            {prd.sections
-              .sort((a, b) => a.order - b.order)
-              .map((section, index) => (
-                <section
-                  key={section.id}
-                  className="prd-section"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="section-header">
-                    <div className="section-indicator" />
-                    <h2>{section.title}</h2>
+            {prd.sections && prd.sections.length > 0 ? (
+              prd.sections
+                .sort((a, b) => a.order - b.order)
+                .map((section, index) => (
+                  <section
+                    key={section.id || `section-${index}`}
+                    className={`prd-section ${index === prd.sections.length - 1 && isGenerating ? 'latest animating' : ''}`}
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="section-header">
+                      <div className="section-indicator">
+                        {index === prd.sections.length - 1 && isGenerating ? (
+                          <Loader2 size={16} className="spinning" />
+                        ) : (
+                          <CheckCircle size={16} />
+                        )}
+                      </div>
+                      <h2>{section.title}</h2>
+                    </div>
+                    <div className="section-content">
+                      <ReactMarkdown>{section.content || '*Content being generated...*'}</ReactMarkdown>
+                    </div>
+                  </section>
+                ))
+            ) : isGenerating ? (
+              <div className="prd-section latest animating">
+                <div className="section-header">
+                  <div className="section-indicator">
+                    <Loader2 size={16} className="spinning" />
                   </div>
-                  <div className="section-content" style={{ whiteSpace: 'pre-wrap' }}>
-                    {section.content}
-                  </div>
-                </section>
-              ))}
+                  <h2>Preparing sections...</h2>
+                </div>
+                <div className="section-content">
+                  <p><em>Content will appear here as it's generated...</em></p>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

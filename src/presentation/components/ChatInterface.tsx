@@ -13,22 +13,49 @@ export function ChatInterface() {
     isGenerating,
     currentPRD,
     pendingClarification,
+    generationProgress,
+    currentSection,
     sendMessage,
     answerClarification,
   } = useChatConversation();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom when messages change or when the last message content is updated
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+
+    // Delay slightly to ensure DOM updates
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
+  }, [messages, messages[messages.length - 1]?.content, messages.length]);
+
+  // Force scroll on thinking messages
+  useEffect(() => {
+    const hasThinkingMessage = messages.some(m => m.type === 'thinking');
+    if (hasThinkingMessage) {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
   }, [messages]);
 
   return (
     <div className="chat-interface">
       <div className="chat-panel">
         <div className="chat-header">
-          <h1>AI PRD Builder</h1>
-          <p>Powered by AI · Create professional PRDs in minutes</p>
+          <div className="chat-title-container">
+            <h1>AI PRD Builder</h1>
+            <span className="chat-badge">CHAT</span>
+          </div>
+          <div className="chat-meta">
+            <span>Powered by AI</span>
+            <span>•</span>
+            <span>Create professional PRDs</span>
+          </div>
         </div>
 
         <div className="chat-messages">
@@ -69,26 +96,41 @@ export function ChatInterface() {
             </div>
           )}
 
-          {messages.map((message) => (
-            <ChatMessageBubble key={message.id} message={message} />
-          ))}
+          {messages
+            .filter(message => message.type !== 'thinking')
+            .map((message) => (
+              <ChatMessageBubble key={message.id} message={message} />
+            ))}
 
-          <div ref={messagesEndRef} />
+          {messages
+            .filter(message => message.type === 'thinking')
+            .map((message) => (
+              <ChatMessageBubble key={message.id} message={message} />
+            ))}
+
+          <div ref={messagesEndRef} style={{ height: 1, minHeight: 1 }} />
         </div>
 
-        <ChatInput
-          onSend={pendingClarification ? answerClarification : sendMessage}
-          disabled={isGenerating}
-          placeholder={
-            pendingClarification
-              ? 'Type your answers here (one per line)...'
-              : 'Describe your PRD requirements...'
-          }
-        />
+        <div className="chat-footer">
+          <ChatInput
+            onSend={pendingClarification ? answerClarification : sendMessage}
+            disabled={isGenerating}
+            placeholder={
+              pendingClarification
+                ? 'Type your answers here (one per line)...'
+                : 'Describe your PRD requirements...'
+            }
+          />
+        </div>
       </div>
 
       <div className="preview-panel">
-        <PRDPreview prd={currentPRD} />
+        <PRDPreview
+          prd={currentPRD}
+          isGenerating={isGenerating}
+          progress={generationProgress}
+          currentSection={currentSection}
+        />
       </div>
     </div>
   );

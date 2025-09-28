@@ -1,4 +1,5 @@
 import { ChatMessage } from '../../domain/valueObjects/ChatMessage.ts';
+import ReactMarkdown from 'react-markdown';
 import './ChatMessageBubble.css';
 
 interface ChatMessageBubbleProps {
@@ -36,16 +37,27 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
           </div>
         )}
 
-        {!isThinking && (
-          <div className="message-content">{message.content}</div>
+        {!isThinking && !isClarification && (
+          <div className="message-content">
+            {isUser ? (
+              message.content
+            ) : (
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            )}
+          </div>
         )}
 
-        {isClarification && message.questions && (
-          <ul className="clarification-questions">
-            {message.questions.map((q, i) => (
-              <li key={i}>{q}</li>
-            ))}
-          </ul>
+        {isClarification && (
+          <div className="clarification-content">
+            <div className="clarification-header">{message.content}</div>
+            {message.questions && message.questions.length > 0 && (
+              <ol className="clarification-questions">
+                {message.questions.map((q, i) => (
+                  <li key={i}>{q}</li>
+                ))}
+              </ol>
+            )}
+          </div>
         )}
 
         <div className="message-timestamp">

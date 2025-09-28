@@ -1,7 +1,18 @@
 .message-container {
   display: flex;
   margin-bottom: 16px;
-  animation: slideInRight 0.3s ease-out;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message-container.user {
@@ -14,25 +25,25 @@
 
 .message-bubble {
   max-width: 75%;
-  padding: 14px 18px;
+  padding: 16px 20px;
   font-weight: 500;
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .message-bubble.user {
   border-radius: 20px 20px 4px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  color: #faf9f6;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .message-bubble.assistant {
   border-radius: 20px 20px 20px 4px;
   background: white;
-  color: #1e293b;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  color: #3a3a3a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8e5e0;
 }
 
 .message-bubble.error {
@@ -45,11 +56,13 @@
 
 .message-bubble.thinking {
   border-radius: 20px 20px 20px 4px;
-  background: #f1f5f9;
-  color: #64748b;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  color: #5a5a5a;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #d0d0d0;
   font-weight: 400;
   font-style: italic;
+  position: relative;
 }
 
 .thinking-indicator {
@@ -67,7 +80,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #94a3b8;
+  background: #5a5a5a;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
 }
@@ -86,17 +99,166 @@
 
 .message-content {
   white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.8;
+}
+
+/* Markdown Styling for Chat Messages */
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4 {
+  color: inherit;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.message-content h1 {
+  font-size: 20px;
+}
+
+.message-content h2 {
+  font-size: 18px;
+}
+
+.message-content h3 {
+  font-size: 16px;
+}
+
+.message-content p {
+  margin-bottom: 12px;
+}
+
+.message-content ul,
+.message-content ol {
+  margin: 12px 0;
+  padding-left: 20px;
+}
+
+.message-content li {
+  margin-bottom: 6px;
+}
+
+.message-content code {
+  background: rgba(45, 45, 45, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #2d2d2d;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.message-bubble.user .message-content code {
+  background: rgba(250, 249, 246, 0.2);
+  color: #faf9f6;
+}
+
+.message-content pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
+  line-height: 1.5;
+  border: 1px solid #333;
+}
+
+.message-content pre code {
+  background: transparent;
+  color: #d4d4d4;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Syntax highlighting colors for code blocks */
+.message-content code[class*="language-"] {
+  color: #d4d4d4;
+}
+
+/* JSON syntax colors */
+.message-content .hljs-attr,
+.message-content .hljs-string {
+  color: #ce9178;
+}
+
+.message-content .hljs-number,
+.message-content .hljs-literal {
+  color: #b5cea8;
+}
+
+.message-content .hljs-keyword {
+  color: #569cd6;
+}
+
+/* User message code blocks */
+.message-bubble.user .message-content pre {
+  background: rgba(26, 26, 26, 0.3);
+  border: 1px solid rgba(250, 249, 246, 0.2);
+}
+
+.message-bubble.user .message-content pre code {
+  color: #faf9f6;
+}
+
+.message-content blockquote {
+  border-left: 3px solid #2d2d2d;
+  padding-left: 12px;
+  margin: 12px 0;
+  color: inherit;
+  opacity: 0.85;
+  font-style: italic;
+}
+
+.message-bubble.user .message-content blockquote {
+  border-left-color: rgba(255, 255, 255, 0.5);
+}
+
+.message-content strong {
+  font-weight: 700;
+}
+
+.message-content em {
+  font-style: italic;
+}
+
+.message-content hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 16px 0;
+}
+
+.message-bubble.user .message-content hr {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+.clarification-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clarification-header {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 15px;
 }
 
 .clarification-questions {
-  margin-top: 12px;
+  margin: 0;
   padding-left: 20px;
-  list-style-type: disc;
+  list-style-type: decimal;
   font-size: 14px;
+  color: #475569;
+  line-height: 1.8;
 }
 
 .clarification-questions li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  padding-left: 4px;
 }
 
 .message-timestamp {

@@ -49,7 +49,7 @@ export class ChatMessage {
       id: crypto.randomUUID(),
       role: 'assistant',
       type: 'clarification',
-      content: 'I need some clarifications to proceed:',
+      content: 'I need clarification on the following:',
       questions,
       timestamp: new Date(),
     });
