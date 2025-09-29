@@ -1,5 +1,6 @@
 export interface PRDWebSocketMessage {
-  type: 'status' | 'progress' | 'clarification' | 'section' | 'complete' | 'error';
+  type: 'status' | 'progress' | 'clarification' | 'section' | 'complete' | 'error' |
+        'professionalAnalysis' | 'architecturalConflict' | 'technicalChallenge' | 'complexityScore';
   data: any;
 }
 

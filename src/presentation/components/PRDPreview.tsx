@@ -142,6 +142,57 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
             markdown += `**Last Updated:** ${prd.updatedAt.toLocaleDateString()}\n\n`;
             markdown += '---\n\n';
 
+            // Include Professional Analysis if present
+            if (prd.professionalAnalysis) {
+              const analysis = prd.professionalAnalysis;
+              markdown += `## Professional Analysis\n\n`;
+
+              if (analysis.hasCriticalIssues) {
+                markdown += `⚠️ **Critical Issues Detected**\n\n`;
+                analysis.blockingIssues?.forEach((issue: string) => {
+                  markdown += `- ${issue}\n`;
+                });
+                markdown += `\n`;
+              }
+
+              if (analysis.complexityScore) {
+                markdown += `**Complexity Score:** ${analysis.complexityScore} points\n`;
+              }
+
+              markdown += `**Architectural Conflicts:** ${analysis.conflictCount || 0}\n`;
+              markdown += `**Technical Challenges:** ${analysis.challengeCount || 0}\n\n`;
+
+              if (analysis.executiveSummary) {
+                markdown += `### Executive Summary\n\n${analysis.executiveSummary}\n\n`;
+              }
+
+              if (analysis.conflicts && analysis.conflicts.length > 0) {
+                markdown += `### Architectural Conflicts\n\n`;
+                analysis.conflicts.forEach((conflict: any) => {
+                  markdown += `#### ${conflict.requirement1} vs ${conflict.requirement2}\n`;
+                  markdown += `- **Severity:** ${conflict.severity}\n`;
+                  markdown += `- **Reason:** ${conflict.conflictReason}\n`;
+                  markdown += `- **Resolution:** ${conflict.resolution}\n\n`;
+                });
+              }
+
+              if (analysis.challenges && analysis.challenges.length > 0) {
+                markdown += `### Technical Challenges\n\n`;
+                analysis.challenges.forEach((challenge: any) => {
+                  markdown += `#### ${challenge.title}\n`;
+                  markdown += `- **Priority:** ${challenge.priority}\n`;
+                  markdown += `- **Category:** ${challenge.category}\n`;
+                  markdown += `- **Description:** ${challenge.description}\n`;
+                  if (challenge.mitigation) {
+                    markdown += `- **Mitigation:** ${challenge.mitigation}\n`;
+                  }
+                  markdown += `\n`;
+                });
+              }
+
+              markdown += '---\n\n';
+            }
+
             prd.sections
               .sort((a, b) => a.order - b.order)
               .forEach(section => {

@@ -1,4 +1,5 @@
 import { PRDDocument } from '../../domain/entities/PRDDocument.ts';
+import { ProfessionalAnalysisView } from './ProfessionalAnalysisView.tsx';
 
 interface PRDDocumentViewerProps {
   document: PRDDocument;
@@ -7,6 +8,7 @@ interface PRDDocumentViewerProps {
 
 export function PRDDocumentViewer({ document, onDownload }: PRDDocumentViewerProps) {
   const sections = document.sections;
+  const analysis = document.professionalAnalysis;
 
   return (
     <div style={{
@@ -41,6 +43,11 @@ export function PRDDocumentViewer({ document, onDownload }: PRDDocumentViewerPro
       <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
         Version: {document.version}
       </div>
+
+      {/* Display Professional Analysis */}
+      {analysis && (
+        <ProfessionalAnalysisView analysis={analysis} />
+      )}
 
       {sections.map((section) => (
         <div key={section.id} style={{ marginBottom: '24px' }}>
