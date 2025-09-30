@@ -1,0 +1,437 @@
+import { useState, FormEvent } from 'react';
+import { Upload, Settings, Send, X } from 'lucide-react';
+import { PRDPreview } from './PRDPreview.tsx';
+import { useChatConversation } from '../hooks/useChatConversation.ts';
+import { DIContainer } from '../../shared/DIContainer.ts';
+import './PRDConfigurationForm.css';
+
+interface PRDConfigurationFormProps {
+  onGenerate?: (data: { title: string; description: string; priority: string; provider: string }) => void;
+}
+
+export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState('Medium');
+  const [provider, setProvider] = useState('Swift AI (Apple Intelligence)');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [includeUserStories, setIncludeUserStories] = useState(true);
+  const [includeTechnicalSpecs, setIncludeTechnicalSpecs] = useState(true);
+  const [includeTimeline, setIncludeTimeline] = useState(false);
+  const [clarificationAnswers, setClarificationAnswers] = useState<string>('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
+  const [isUploadingMockups, setIsUploadingMockups] = useState(false);
+  const [mockupUploadProgress, setMockupUploadProgress] = useState(0);
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
+
+  const {
+    isGenerating,
+    currentPRD,
+    pendingClarification,
+    generationProgress,
+    currentSection,
+    sendMessage,
+    answerClarification,
+  } = useChatConversation();
+
+  const container = DIContainer.getInstance();
+  const uploadMockupUseCase = container.uploadMockupUseCase;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    // Filter for images and PDFs
+    const validFiles = files.filter(file =>
+      file.type.startsWith('image/') || file.type === 'application/pdf'
+    );
+
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+
+    // Generate previews for images
+    validFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFilePreviews(prev => ({
+            ...prev,
+            [file.name]: reader.result as string
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  };
+
+  const removeFile = (fileName: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.name !== fileName));
+    setFilePreviews(prev => {
+      const newPreviews = { ...prev };
+      delete newPreviews[fileName];
+      return newPreviews;
+    });
+  };
+
+  const handleClarificationSubmit = () => {
+    if (clarificationAnswers.trim()) {
+      answerClarification(clarificationAnswers);
+      setClarificationAnswers('');
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!title.trim() || !description.trim()) {
+      return;
+    }
+
+    try {
+      // Step 1: Create PRD request first to get request ID
+      // For now, we'll generate a temporary ID. In production, this would come from backend
+      const tempRequestId = crypto.randomUUID();
+      setCurrentRequestId(tempRequestId);
+
+      // Step 2: Upload mockups if any
+      if (uploadedFiles.length > 0) {
+        setIsUploadingMockups(true);
+        setMockupUploadProgress(0);
+
+        try {
+          const totalFiles = uploadedFiles.length;
+          let uploadedCount = 0;
+
+          for (const file of uploadedFiles) {
+            await uploadMockupUseCase.execute(tempRequestId, file);
+            uploadedCount++;
+            setMockupUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
+          }
+
+          console.log(`✅ Successfully uploaded ${uploadedCount} mockups`);
+        } catch (error) {
+          console.error('Failed to upload mockups:', error);
+          // Continue with PRD generation even if mockups fail
+        } finally {
+          setIsUploadingMockups(false);
+          setMockupUploadProgress(0);
+        }
+      }
+
+      // Step 3: Build the PRD request message
+      let requestMessage = `Product Title: ${title}\n\nDescription: ${description}\n\nPriority: ${priority}`;
+
+      // Add mockup context if available
+      if (uploadedFiles.length > 0) {
+        requestMessage += `\n\n📸 ${uploadedFiles.length} mockup(s) uploaded for analysis`;
+      }
+
+      // Add advanced options if enabled
+      const enabledOptions = [];
+      if (includeUserStories) enabledOptions.push('User Stories');
+      if (includeTechnicalSpecs) enabledOptions.push('Technical Specifications');
+      if (includeTimeline) enabledOptions.push('Development Timeline');
+
+      if (enabledOptions.length > 0) {
+        requestMessage += `\n\nPlease include the following sections: ${enabledOptions.join(', ')}`;
+      }
+
+      // Step 4: Trigger the WebSocket-based generation
+      await sendMessage(requestMessage);
+
+      // Notify parent if callback provided
+      if (onGenerate) {
+        onGenerate({ title, description, priority, provider });
+      }
+    } catch (error) {
+      console.error('Error in form submission:', error);
+    }
+  };
+
+  return (
+    <div className="prd-config-container">
+      {/* Header */}
+      <div className="prd-config-header">
+        <div className="back-button">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <div>
+          <h1 className="prd-config-title">PRD Builder</h1>
+          <p className="prd-config-subtitle">Create comprehensive Product Requirements Documents</p>
+        </div>
+        <div className="system-status">
+          <span className="status-label">System Status:</span>
+          <div className="status-badges">
+            <span className="status-badge swift">Swift AI</span>
+            <span className="status-badge vapor">Vapor Server</span>
+            <span className="status-badge database">Database</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="prd-config-content">
+        {/* Left Panel - Form */}
+        <div className="prd-config-panel">
+          <div className="panel-header">
+            <h2 className="panel-title">PRD Configuration</h2>
+            <p className="panel-description">Configure your Product Requirements Document generation settings</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="prd-form">
+            {/* Product Title */}
+            <div className="form-group">
+              <label className="form-label">
+                Product Title <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Enter your product name..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Product Description */}
+            <div className="form-group">
+              <label className="form-label">
+                Product Description <span className="required">*</span>
+              </label>
+              <textarea
+                className="form-textarea"
+                placeholder="Describe your product idea, key features, and objectives..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={6}
+                required
+              />
+            </div>
+
+            {/* Priority and AI Provider Row */}
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select
+                  className="form-select"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">AI Provider</label>
+                <select
+                  className="form-select"
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
+                >
+                  <option value="Swift AI (Apple Intelligence)">Swift AI (Apple Intelligence)</option>
+                  <option value="OpenAI GPT-4">OpenAI GPT-4</option>
+                  <option value="Anthropic Claude">Anthropic Claude</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Mockups & References */}
+            <div className="form-group">
+              <label className="form-label">Mockups & References (Optional)</label>
+              <input
+                type="file"
+                id="file-upload"
+                className="file-input"
+                multiple
+                accept="image/*,application/pdf"
+                onChange={handleFileUpload}
+              />
+              <label htmlFor="file-upload" className="upload-area">
+                <Upload size={32} className="upload-icon" />
+                <p className="upload-title">Click to upload mockups, wireframes, or design references</p>
+                <p className="upload-subtitle">Supports images and PDFs (Max 10MB each)</p>
+              </label>
+
+              {/* File Previews */}
+              {uploadedFiles.length > 0 && (
+                <div className="file-previews">
+                  {uploadedFiles.map((file) => (
+                    <div key={file.name} className="file-preview-card">
+                      {filePreviews[file.name] ? (
+                        <div
+                          className="file-thumbnail"
+                          style={{ backgroundImage: `url(${filePreviews[file.name]})` }}
+                        />
+                      ) : (
+                        <div className="file-thumbnail pdf">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="file-info">
+                        <p className="file-name">{file.name}</p>
+                        <p className="file-size">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="file-remove"
+                        onClick={() => removeFile(file.name)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Advanced Options */}
+            <div className="advanced-options">
+              <button
+                type="button"
+                className="advanced-toggle"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                <Settings size={16} />
+                Advanced Options
+                <span className="advanced-action">{showAdvanced ? 'Hide' : 'Show'}</span>
+              </button>
+
+              {showAdvanced && (
+                <div className="advanced-content">
+                  <h3 className="advanced-section-title">Generation Options</h3>
+
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      className="checkbox-input"
+                      checked={includeUserStories}
+                      onChange={(e) => setIncludeUserStories(e.target.checked)}
+                    />
+                    <span className="checkbox-text">Include User Stories</span>
+                  </label>
+
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      className="checkbox-input"
+                      checked={includeTechnicalSpecs}
+                      onChange={(e) => setIncludeTechnicalSpecs(e.target.checked)}
+                    />
+                    <span className="checkbox-text">Include Technical Specifications</span>
+                  </label>
+
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      className="checkbox-input"
+                      checked={includeTimeline}
+                      onChange={(e) => setIncludeTimeline(e.target.checked)}
+                    />
+                    <span className="checkbox-text">Include Development Timeline</span>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Mockup Upload Progress */}
+            {isUploadingMockups && (
+              <div className="mockup-upload-progress">
+                <p>Uploading mockups... {mockupUploadProgress}%</p>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${mockupUploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Generate Button */}
+            <button
+              type="submit"
+              className="generate-button"
+              disabled={isGenerating || isUploadingMockups || !title.trim() || !description.trim()}
+            >
+              <Send size={18} />
+              {isUploadingMockups
+                ? 'Uploading Mockups...'
+                : isGenerating
+                ? 'Generating...'
+                : 'Generate PRD'}
+            </button>
+          </form>
+        </div>
+
+        {/* Right Panel - PRD Preview */}
+        <div className="prd-preview-panel">
+          <PRDPreview
+            prd={currentPRD}
+            isGenerating={isGenerating}
+            progress={generationProgress}
+            currentSection={currentSection}
+          />
+        </div>
+      </div>
+
+      {/* Clarification Dialog */}
+      {pendingClarification && pendingClarification.length > 0 && (
+        <div className="clarification-overlay">
+          <div className="clarification-dialog">
+            <div className="clarification-header">
+              <h3>Additional Information Needed</h3>
+              <button
+                className="close-button"
+                onClick={() => {
+                  // Send empty answers to continue
+                  answerClarification('continue');
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="clarification-content">
+              <p className="clarification-description">
+                Please answer the following questions to help generate a more accurate PRD:
+              </p>
+              <ol className="clarification-questions">
+                {pendingClarification.map((question, index) => (
+                  <li key={index}>{question}</li>
+                ))}
+              </ol>
+              <textarea
+                className="clarification-textarea"
+                placeholder="Enter your answers here (one per line)..."
+                value={clarificationAnswers}
+                onChange={(e) => setClarificationAnswers(e.target.value)}
+                rows={6}
+              />
+            </div>
+            <div className="clarification-footer">
+              <button
+                className="clarification-button secondary"
+                onClick={() => answerClarification('continue')}
+              >
+                Skip
+              </button>
+              <button
+                className="clarification-button primary"
+                onClick={handleClarificationSubmit}
+                disabled={!clarificationAnswers.trim()}
+              >
+                Submit Answers
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

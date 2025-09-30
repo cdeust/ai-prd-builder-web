@@ -1,6 +1,7 @@
 import { FileText, Download, FileDown, Loader2, CheckCircle } from 'lucide-react';
 import type { PRDDocument } from '../../domain/entities/PRDDocument.ts';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './PRDPreview.css';
 
 interface PRDPreviewProps {
@@ -51,28 +52,6 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
 
   return (
     <div className="prd-preview">
-      <div className="prd-header">
-        <div className="prd-title-container">
-          <h1>{prd.title}</h1>
-          {isGenerating ? (
-            <span className="draft-badge">DRAFT</span>
-          ) : (
-            <span className="final-badge">FINAL VERSION</span>
-          )}
-        </div>
-        <div className="prd-meta">
-          <span>Version {prd.version}</span>
-          <span>•</span>
-          <span>Updated {prd.updatedAt.toLocaleDateString()}</span>
-          {isGenerating && (
-            <>
-              <span>•</span>
-              <span className="generating-badge">Live Updating...</span>
-            </>
-          )}
-        </div>
-      </div>
-
       <div className="prd-content">
         <div className="prd-sections-container">
           <div className="prd-sections">
@@ -96,7 +75,9 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
                       <h2>{section.title}</h2>
                     </div>
                     <div className="section-content">
-                      <ReactMarkdown>{section.content || '*Content being generated...*'}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {section.content || '*Content being generated...*'}
+                      </ReactMarkdown>
                     </div>
                   </section>
                 ))
@@ -109,7 +90,9 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
                   <h2>Preparing sections...</h2>
                 </div>
                 <div className="section-content">
-                  <p><em>Content will appear here as it's generated...</em></p>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    *Content will appear here as it's generated...*
+                  </ReactMarkdown>
                 </div>
               </div>
             ) : null}
@@ -131,8 +114,9 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
             URL.revokeObjectURL(url);
           }}
           className="export-button primary"
+          disabled={isGenerating}
         >
-          <Download size={18} className="button-icon" />
+          <Download size={18} />
           Download JSON
         </button>
         <button
@@ -208,8 +192,9 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
             URL.revokeObjectURL(url);
           }}
           className="export-button secondary"
+          disabled={isGenerating}
         >
-          <FileDown size={18} className="button-icon" />
+          <FileDown size={18} />
           Download Markdown
         </button>
       </div>

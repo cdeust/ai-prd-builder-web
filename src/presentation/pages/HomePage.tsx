@@ -1,5 +1,15 @@
-import { ChatInterface } from '../components/ChatInterface.tsx';
+import { useState } from 'react';
+import LandingPage from './LandingPage.tsx';
+import { PRDConfigurationForm } from '../components/PRDConfigurationForm.tsx';
+
+type PageState = 'landing' | 'builder';
 
 export default function HomePage() {
-  return <ChatInterface />;
+  const [currentPage, setCurrentPage] = useState<PageState>('landing');
+
+  if (currentPage === 'landing') {
+    return <LandingPage onStartBuilding={() => setCurrentPage('builder')} />;
+  }
+
+  return <PRDConfigurationForm />;
 }

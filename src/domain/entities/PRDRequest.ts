@@ -14,6 +14,8 @@ export interface PRDRequestProps {
   updatedAt: Date;
   completedAt?: Date;
   error?: string;
+  mockupCount?: number;
+  mockupsAnalyzed?: boolean;
 }
 
 export class PRDRequest {
@@ -71,5 +73,17 @@ export class PRDRequest {
 
   get error(): string | undefined {
     return this.props.error;
+  }
+
+  get mockupCount(): number {
+    return this.props.mockupCount || 0;
+  }
+
+  get mockupsAnalyzed(): boolean {
+    return this.props.mockupsAnalyzed || false;
+  }
+
+  get hasMockups(): boolean {
+    return this.mockupCount > 0;
   }
 }
