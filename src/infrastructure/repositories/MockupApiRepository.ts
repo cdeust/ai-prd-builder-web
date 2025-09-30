@@ -16,16 +16,19 @@ export class MockupApiRepository implements IMockupRepository {
       data
     );
 
+    // Handle both array and object responses from backend
+    const uploadData = Array.isArray(response) ? response[0] : response;
+
     return MockupUpload.create({
-      id: response.id,
-      fileName: response.fileName,
-      fileSize: response.fileSize,
-      mimeType: response.mimeType,
-      uploadedAt: new Date(response.uploadedAt),
-      isAnalyzed: response.analysisResult !== null,
-      analysisConfidence: response.analysisConfidence,
-      isProcessed: response.isProcessed,
-      expiresAt: new Date(response.expiresAt),
+      id: uploadData.id,
+      fileName: uploadData.fileName || uploadData.file_name,
+      fileSize: uploadData.fileSize || uploadData.file_size,
+      mimeType: uploadData.mimeType || uploadData.mime_type,
+      uploadedAt: new Date(uploadData.uploadedAt || uploadData.uploaded_at),
+      isAnalyzed: uploadData.analysisResult !== null || uploadData.analysis_result !== null,
+      analysisConfidence: uploadData.analysisConfidence || uploadData.analysis_confidence,
+      isProcessed: uploadData.isProcessed || uploadData.is_processed,
+      expiresAt: new Date(uploadData.expiresAt || uploadData.expires_at),
     });
   }
 
@@ -65,20 +68,23 @@ export class MockupApiRepository implements IMockupRepository {
       `/api/v1/mockups/${uploadId}?expiresIn=${expiresIn}`
     );
 
+    // Handle both array and object responses from backend
+    const mockupData = Array.isArray(response) ? response[0] : response;
+
     return {
       upload: MockupUpload.create({
-        id: response.id,
-        fileName: response.fileName,
-        fileSize: response.fileSize,
-        mimeType: response.mimeType,
-        uploadedAt: new Date(response.uploadedAt),
-        isAnalyzed: response.analysisResult !== null,
-        analysisConfidence: response.analysisConfidence,
-        isProcessed: response.isProcessed,
-        expiresAt: new Date(response.expiresAt),
+        id: mockupData.id,
+        fileName: mockupData.fileName || mockupData.file_name,
+        fileSize: mockupData.fileSize || mockupData.file_size,
+        mimeType: mockupData.mimeType || mockupData.mime_type,
+        uploadedAt: new Date(mockupData.uploadedAt || mockupData.uploaded_at),
+        isAnalyzed: mockupData.analysisResult !== null || mockupData.analysis_result !== null,
+        analysisConfidence: mockupData.analysisConfidence || mockupData.analysis_confidence,
+        isProcessed: mockupData.isProcessed || mockupData.is_processed,
+        expiresAt: new Date(mockupData.expiresAt || mockupData.expires_at),
       }),
-      signedUrl: response.signedUrl,
-      urlExpiresIn: response.urlExpiresIn,
+      signedUrl: mockupData.signedUrl || mockupData.signed_url,
+      urlExpiresIn: mockupData.urlExpiresIn || mockupData.url_expires_in,
     };
   }
 

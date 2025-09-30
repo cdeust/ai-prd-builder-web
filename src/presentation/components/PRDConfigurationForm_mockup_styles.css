@@ -29,4 +29,12 @@
   border-radius: 4px;
 }
 
+.progress-detail {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #0369a1;
+  font-style: italic;
+  opacity: 0.9;
+}
+
 /* Add this to the end of PRDConfigurationForm.css */

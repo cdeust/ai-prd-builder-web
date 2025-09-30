@@ -108,22 +108,68 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
         try {
           const totalFiles = uploadedFiles.length;
           let uploadedCount = 0;
+          const uploadedIds: string[] = [];
 
           console.log(`📸 Uploading ${totalFiles} mockup(s)...`);
           for (const file of uploadedFiles) {
-            await uploadMockupUseCase.execute(requestId, file);
+            const upload = await uploadMockupUseCase.execute(requestId, file);
+            uploadedIds.push(upload.id);
             uploadedCount++;
-            setMockupUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
+            setMockupUploadProgress(Math.round((uploadedCount / totalFiles) * 100)); // 100% for uploads
           }
 
-          console.log(`✅ Successfully uploaded ${uploadedCount} mockups with contextual analysis`);
+          console.log(`✅ Mockups uploaded, analyzing with Apple Intelligence...`);
+
+          // Poll for analysis completion
+          const mockupRepository = container.mockupRepository;
+          const pollInterval = setInterval(async () => {
+            try {
+              let allAnalyzed = true;
+              let analyzedCount = 0;
+
+              for (const uploadId of uploadedIds) {
+                const { upload } = await mockupRepository.getMockupWithUrl(uploadId);
+                if (upload.isProcessed) {
+                  analyzedCount++;
+                } else {
+                  allAnalyzed = false;
+                }
+              }
+
+              // Update progress for analysis phase (0-100%)
+              const analysisProgress = Math.round((analyzedCount / uploadedIds.length) * 100);
+              setMockupUploadProgress(analysisProgress);
+
+              if (allAnalyzed) {
+                clearInterval(pollInterval);
+                console.log(`✅ Successfully analyzed ${analyzedCount} mockups with Apple Intelligence`);
+                setIsUploadingMockups(false);
+                setMockupUploadProgress(0);
+              }
+            } catch (error) {
+              console.error('Error polling mockup status:', error);
+              clearInterval(pollInterval);
+              setIsUploadingMockups(false);
+              setMockupUploadProgress(0);
+            }
+          }, 2000); // Poll every 2 seconds
+
+          // Safety timeout after 2 minutes
+          setTimeout(() => {
+            clearInterval(pollInterval);
+            if (isUploadingMockups) {
+              console.warn('⚠️ Mockup analysis timed out, continuing anyway');
+              setIsUploadingMockups(false);
+              setMockupUploadProgress(0);
+            }
+          }, 120000);
+
         } catch (error) {
           console.error('❌ Failed to upload mockups:', error);
           alert('Failed to upload mockups. Please check the error and try again.');
-          return; // Stop if mockups fail
-        } finally {
           setIsUploadingMockups(false);
           setMockupUploadProgress(0);
+          return; // Stop if mockups fail
         }
       }
 
@@ -354,13 +400,20 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
             {/* Mockup Upload Progress */}
             {isUploadingMockups && (
               <div className="mockup-upload-progress">
-                <p>Uploading mockups... {mockupUploadProgress}%</p>
+                <p>
+                  {mockupUploadProgress === 100
+                    ? `Analysis complete! 100%`
+                    : `Analyzing with Apple Intelligence... ${mockupUploadProgress}%`}
+                </p>
                 <div className="progress-bar">
                   <div
                     className="progress-fill"
                     style={{ width: `${mockupUploadProgress}%` }}
                   />
                 </div>
+                {mockupUploadProgress < 100 && (
+                  <p className="progress-detail">🍎 Apple Intelligence is analyzing UI elements, layout, and business logic...</p>
+                )}
               </div>
             )}
 

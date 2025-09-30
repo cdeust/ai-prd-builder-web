@@ -541,7 +541,7 @@ export function useChatConversation() {
     return () => {
       wsClient.clearHandlers();
     };
-  }, [pendingSectionName, pendingSectionContent, createOrUpdateSection]);
+  }, [pendingSectionName, pendingSectionContent, createOrUpdateSection, wsClient]);
 
 
   const sendMessage = useCallback(async (content: string) => {
@@ -560,7 +560,6 @@ export function useChatConversation() {
         // Generate a temporary request ID for WebSocket connection
         const tempRequestId = crypto.randomUUID();
 
-        const wsClient = container.getWebSocketClient();
         await wsClient.connect(tempRequestId);
 
         wsClient.send('start_generation', {
@@ -591,10 +590,17 @@ export function useChatConversation() {
         )]);
       }
     }
-  }, [isConnected, container]);
+  }, [isConnected, wsClient]);
 
   const answerClarification = useCallback(async (answerText: string) => {
     if (!isConnected || !pendingClarification) return;
+
+    // Double-check WebSocket is actually connected
+    if (!wsClient.isConnected()) {
+      console.error('[Chat] WebSocket not connected, cannot send clarification');
+      setIsConnected(false);
+      return;
+    }
 
     const answerMessage = ChatMessage.createUserMessage(answerText);
     setMessages(prev => [...prev, answerMessage]);
@@ -604,8 +610,14 @@ export function useChatConversation() {
     // Split by newlines to get array of answers
     const answers = answerText.split('\n').map(a => a.trim()).filter(a => a.length > 0);
 
-    wsClient.send('clarification_answers', { answers });
-    setPendingClarification(null);
+    try {
+      wsClient.send('clarification_answers', { answers });
+      setPendingClarification(null);
+    } catch (error) {
+      console.error('[Chat] Failed to send clarification:', error);
+      setIsGenerating(false);
+      return;
+    }
 
     // Create or update thinking message
     setMessages(prev => {
