@@ -1,5 +1,4 @@
-import React from 'react';
-import { ProfessionalAnalysis, ArchitecturalConflict, TechnicalChallenge } from '../../domain/entities/PRDDocument';
+import type { ProfessionalAnalysis, ArchitecturalConflict, TechnicalChallenge } from '../../domain/entities/PRDDocument';
 
 interface ProfessionalAnalysisViewProps {
   analysis: ProfessionalAnalysis;

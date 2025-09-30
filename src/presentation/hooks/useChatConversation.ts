@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ChatMessage } from '../../domain/valueObjects/ChatMessage.ts';
 import { PRDDocument } from '../../domain/entities/PRDDocument.ts';
 import { PRDSection } from '../../domain/entities/PRDSection.ts';
@@ -19,11 +19,12 @@ export function useChatConversation() {
   const container = DIContainer.getInstance();
   const wsClient = container.getWebSocketClient();
 
-  const addMessage = useCallback((message: ChatMessage) => {
+  // Keep these for potential future use, prepend with underscore to avoid warnings
+  const _addMessage = useCallback((message: ChatMessage) => {
     setMessages(prev => [...prev, message]);
   }, []);
 
-  const updateLastMessage = useCallback((content: string) => {
+  const _updateLastMessage = useCallback((content: string) => {
     setMessages(prev => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];

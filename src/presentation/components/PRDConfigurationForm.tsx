@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Upload, Settings, Send, X } from 'lucide-react';
 import { PRDPreview } from './PRDPreview.tsx';
 import { useChatConversation } from '../hooks/useChatConversation.ts';
@@ -23,7 +23,7 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [isUploadingMockups, setIsUploadingMockups] = useState(false);
   const [mockupUploadProgress, setMockupUploadProgress] = useState(0);
-  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
+  const [_currentRequestId, setCurrentRequestId] = useState<string | null>(null);
 
   const {
     isGenerating,
@@ -37,6 +37,7 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
 
   const container = DIContainer.getInstance();
   const uploadMockupUseCase = container.uploadMockupUseCase;
+  const prdRepository = container.prdRepository;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -87,12 +88,19 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
     }
 
     try {
-      // Step 1: Create PRD request first to get request ID
-      // For now, we'll generate a temporary ID. In production, this would come from backend
-      const tempRequestId = crypto.randomUUID();
-      setCurrentRequestId(tempRequestId);
+      // Step 1: Create PRD request first using Request-First workflow
+      console.log('📝 Creating PRD request...');
+      const prdRequest = await prdRepository.createRequest({
+        title,
+        description,
+        priority: priority.toLowerCase(),
+      });
 
-      // Step 2: Upload mockups if any
+      const requestId = prdRequest.id;
+      setCurrentRequestId(requestId);
+      console.log(`✅ PRD request created with ID: ${requestId}`);
+
+      // Step 2: Upload mockups if any (now with valid request ID)
       if (uploadedFiles.length > 0) {
         setIsUploadingMockups(true);
         setMockupUploadProgress(0);
@@ -101,16 +109,18 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
           const totalFiles = uploadedFiles.length;
           let uploadedCount = 0;
 
+          console.log(`📸 Uploading ${totalFiles} mockup(s)...`);
           for (const file of uploadedFiles) {
-            await uploadMockupUseCase.execute(tempRequestId, file);
+            await uploadMockupUseCase.execute(requestId, file);
             uploadedCount++;
             setMockupUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
           }
 
-          console.log(`✅ Successfully uploaded ${uploadedCount} mockups`);
+          console.log(`✅ Successfully uploaded ${uploadedCount} mockups with contextual analysis`);
         } catch (error) {
-          console.error('Failed to upload mockups:', error);
-          // Continue with PRD generation even if mockups fail
+          console.error('❌ Failed to upload mockups:', error);
+          alert('Failed to upload mockups. Please check the error and try again.');
+          return; // Stop if mockups fail
         } finally {
           setIsUploadingMockups(false);
           setMockupUploadProgress(0);

@@ -16,7 +16,7 @@ export class DIContainer {
   private static instance: DIContainer;
 
   private readonly apiClient: ApiClient;
-  private readonly prdRepository: PRDApiRepository;
+  public readonly prdRepository: PRDApiRepository;
   private readonly mockupRepository: MockupApiRepository;
   private readonly webSocketClient: WebSocketClient;
 

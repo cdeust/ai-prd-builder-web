@@ -11,7 +11,7 @@ interface PRDPreviewProps {
   currentSection?: string;
 }
 
-export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSection }: PRDPreviewProps) {
+export function PRDPreview({ prd, isGenerating = false }: PRDPreviewProps) {
   // Log only essential info
   if (prd) {
     console.log('[PRDPreview] Displaying PRD with', prd.sections.length, 'sections');
@@ -55,7 +55,7 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
       <div className="prd-content">
         <div className="prd-sections-container">
           <div className="prd-sections">
-            {prd.sections && prd.sections.length > 0 ? (
+            {prd && prd.sections && prd.sections.length > 0 ? (
               prd.sections
                 .sort((a, b) => a.order - b.order)
                 .map((section, index) => (
@@ -103,6 +103,7 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
       <div className="prd-footer">
         <button
           onClick={() => {
+            if (!prd) return;
             const blob = new Blob([JSON.stringify(prd, null, 2)], {
               type: 'application/json',
             });
@@ -114,13 +115,14 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
             URL.revokeObjectURL(url);
           }}
           className="export-button primary"
-          disabled={isGenerating}
+          disabled={isGenerating || !prd}
         >
           <Download size={18} />
           Download JSON
         </button>
         <button
           onClick={() => {
+            if (!prd) return;
             let markdown = `# ${prd.title}\n\n`;
             markdown += `**Version:** ${prd.version}\n`;
             markdown += `**Last Updated:** ${prd.updatedAt.toLocaleDateString()}\n\n`;
@@ -192,7 +194,7 @@ export function PRDPreview({ prd, isGenerating = false, progress = 0, currentSec
             URL.revokeObjectURL(url);
           }}
           className="export-button secondary"
-          disabled={isGenerating}
+          disabled={isGenerating || !prd}
         >
           <FileDown size={18} />
           Download Markdown

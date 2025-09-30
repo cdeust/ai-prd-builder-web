@@ -10,17 +10,18 @@ export class PRDApiRepository implements IPRDRepository {
   constructor(private readonly apiClient: ApiClient) {}
 
   async createRequest(data: CreatePRDRequestDTO): Promise<PRDRequest> {
-    const response = await this.apiClient.post<CreatePRDRequestDTO, any>('/api/v1/prd/generate', data);
+    // Call the dedicated endpoint for creating PRD requests (Request-First workflow)
+    const response = await this.apiClient.post<CreatePRDRequestDTO, any>('/api/v1/prd/requests', data);
 
     return PRDRequest.create({
       id: response.request_id || response.requestId,
-      title: data.title,
-      description: data.description,
+      title: response.title || data.title,
+      description: response.description || data.description,
       priority: Priority.create(data.priority),
-      status: RequestStatus.create('pending'),
+      status: RequestStatus.create(response.status || 'pending'),
       progress: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date(response.created_at || response.createdAt || Date.now()),
+      updatedAt: new Date(response.created_at || response.createdAt || Date.now())
     });
   }
 
