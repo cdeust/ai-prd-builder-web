@@ -5,6 +5,7 @@ export interface CreatePRDRequestDTO {
   title: string;
   description: string;
   priority: string;
+  preferredProvider?: string;
 }
 
 export interface IPRDRepository {

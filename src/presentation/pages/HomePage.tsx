@@ -11,5 +11,5 @@ export default function HomePage() {
     return <LandingPage onStartBuilding={() => setCurrentPage('builder')} />;
   }
 
-  return <PRDConfigurationForm />;
+  return <PRDConfigurationForm onBack={() => setCurrentPage('landing')} />;
 }

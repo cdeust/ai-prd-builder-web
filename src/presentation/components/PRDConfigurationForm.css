@@ -70,23 +70,33 @@
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.02em;
+  transition: all 0.2s;
 }
 
-.status-badge.swift {
-  background: #8b5cf6;
+.status-badge.online {
+  background: #10b981;
   color: white;
 }
 
-.status-badge.vapor {
-  background: #8b5cf6;
+.status-badge.offline {
+  background: #ef4444;
   color: white;
 }
 
-.status-badge.database {
-  background: #8b5cf6;
+.status-badge.loading {
+  background: #6b7280;
   color: white;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .prd-config-content {

@@ -1,0 +1,66 @@
+.provider-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.provider-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a202c;
+}
+
+.provider-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.provider-select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #1a202c;
+  background: #fafafa;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 20px;
+  padding-right: 40px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.provider-select:hover {
+  border-color: #9ca3af;
+}
+
+.provider-select:focus {
+  outline: none;
+  border-color: #2d2d2d;
+  box-shadow: 0 0 0 3px rgba(45, 45, 45, 0.1);
+  background: white;
+}
+
+.provider-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.provider-loading {
+  padding: 12px 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}

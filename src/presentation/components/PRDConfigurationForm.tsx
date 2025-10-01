@@ -1,19 +1,22 @@
 import { useState, type FormEvent } from 'react';
 import { Upload, Settings, Send, X } from 'lucide-react';
 import { PRDPreview } from './PRDPreview.tsx';
+import { ProviderSelector } from './ProviderSelector.tsx';
 import { useChatConversation } from '../hooks/useChatConversation.ts';
+import { useSystemStatus } from '../hooks/useSystemStatus.ts';
 import { DIContainer } from '../../shared/DIContainer.ts';
 import './PRDConfigurationForm.css';
 
 interface PRDConfigurationFormProps {
   onGenerate?: (data: { title: string; description: string; priority: string; provider: string }) => void;
+  onBack?: () => void;
 }
 
-export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) {
+export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('Medium');
-  const [provider, setProvider] = useState('Swift AI (Apple Intelligence)');
+  const [provider, setProvider] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [includeUserStories, setIncludeUserStories] = useState(true);
   const [includeTechnicalSpecs, setIncludeTechnicalSpecs] = useState(true);
@@ -38,6 +41,7 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
   const container = DIContainer.getInstance();
   const uploadMockupUseCase = container.uploadMockupUseCase;
   const prdRepository = container.prdRepository;
+  const systemStatus = useSystemStatus();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -94,6 +98,7 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
         title,
         description,
         priority: priority.toLowerCase(),
+        preferredProvider: provider || undefined,
       });
 
       const requestId = prdRequest.id;
@@ -207,7 +212,7 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
     <div className="prd-config-container">
       {/* Header */}
       <div className="prd-config-header">
-        <div className="back-button">
+        <div className="back-button" onClick={onBack}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
@@ -219,9 +224,15 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
         <div className="system-status">
           <span className="status-label">System Status:</span>
           <div className="status-badges">
-            <span className="status-badge swift">Swift AI</span>
-            <span className="status-badge vapor">Vapor Server</span>
-            <span className="status-badge database">Database</span>
+            <span className={`status-badge ${systemStatus.provider.status}`}>
+              {systemStatus.provider.name}
+            </span>
+            <span className={`status-badge ${systemStatus.server.status}`}>
+              Server
+            </span>
+            <span className={`status-badge ${systemStatus.database.status}`}>
+              Database
+            </span>
           </div>
         </div>
       </div>
@@ -266,35 +277,27 @@ export function PRDConfigurationForm({ onGenerate }: PRDConfigurationFormProps) 
               />
             </div>
 
-            {/* Priority and AI Provider Row */}
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select
-                  className="form-select"
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Critical">Critical</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">AI Provider</label>
-                <select
-                  className="form-select"
-                  value={provider}
-                  onChange={(e) => setProvider(e.target.value)}
-                >
-                  <option value="Swift AI (Apple Intelligence)">Swift AI (Apple Intelligence)</option>
-                  <option value="OpenAI GPT-4">OpenAI GPT-4</option>
-                  <option value="Anthropic Claude">Anthropic Claude</option>
-                </select>
-              </div>
+            {/* Priority */}
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <select
+                className="form-select"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
             </div>
+
+            {/* AI Provider */}
+            <ProviderSelector
+              value={provider}
+              onChange={setProvider}
+              disabled={isGenerating}
+            />
 
             {/* Mockups & References */}
             <div className="form-group">
