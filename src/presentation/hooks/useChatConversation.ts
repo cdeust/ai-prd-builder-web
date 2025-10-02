@@ -544,7 +544,7 @@ export function useChatConversation() {
   }, [pendingSectionName, pendingSectionContent, createOrUpdateSection, wsClient]);
 
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, prdRequestId?: string) => {
     if (!content.trim()) return;
 
     const userMessage = ChatMessage.createUserMessage(content);
@@ -557,15 +557,17 @@ export function useChatConversation() {
       setCurrentSection('Initializing...');
 
       try {
-        // Generate a temporary request ID for WebSocket connection
-        const tempRequestId = crypto.randomUUID();
+        // Use provided PRD request ID or generate temporary one as fallback
+        const requestId = prdRequestId || crypto.randomUUID();
+        console.log('[Chat] Connecting with request ID:', requestId, prdRequestId ? '(actual PRD ID)' : '(temp fallback)');
 
-        await wsClient.connect(tempRequestId);
+        await wsClient.connect(requestId);
 
         wsClient.send('start_generation', {
           title: 'PRD Request',
           description: content,
-          priority: 'medium'
+          priority: 'medium',
+          prdRequestId: prdRequestId  // ✅ Include actual PRD ID in message
         });
 
         // Create or update thinking message

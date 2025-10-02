@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Upload, Settings, Send, X } from 'lucide-react';
 import { PRDPreview } from './PRDPreview.tsx';
 import { ProviderSelector } from './ProviderSelector.tsx';
+import { CodebaseSelector } from './CodebaseSelector.tsx';
 import { useChatConversation } from '../hooks/useChatConversation.ts';
 import { useSystemStatus } from '../hooks/useSystemStatus.ts';
 import { DIContainer } from '../../shared/DIContainer.ts';
@@ -17,6 +18,7 @@ export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFor
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [provider, setProvider] = useState('');
+  const [codebaseId, setCodebaseId] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [includeUserStories, setIncludeUserStories] = useState(true);
   const [includeTechnicalSpecs, setIncludeTechnicalSpecs] = useState(true);
@@ -105,7 +107,22 @@ export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFor
       setCurrentRequestId(requestId);
       console.log(`✅ PRD request created with ID: ${requestId}`);
 
-      // Step 2: Upload mockups if any (now with valid request ID)
+      // Step 2: Link codebase if selected
+      if (codebaseId) {
+        try {
+          const linkCodebaseUseCase = container.linkCodebaseToPRDUseCase;
+          await linkCodebaseUseCase.execute({
+            codebaseId: codebaseId,
+            prdId: requestId
+          });
+          console.log(`🔗 Linked codebase ${codebaseId} to PRD ${requestId}`);
+        } catch (error) {
+          console.error('❌ Failed to link codebase:', error);
+          // Continue anyway - not critical
+        }
+      }
+
+      // Step 3: Upload mockups if any (now with valid request ID)
       if (uploadedFiles.length > 0) {
         setIsUploadingMockups(true);
         setMockupUploadProgress(0);
@@ -126,7 +143,7 @@ export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFor
           console.log(`✅ Mockups uploaded, analyzing with Apple Intelligence...`);
 
           // Poll for analysis completion
-          const mockupRepository = container.mockupRepository;
+          const mockupRepository = container.getMockupRepository();
           const pollInterval = setInterval(async () => {
             try {
               let allAnalyzed = true;
@@ -178,7 +195,7 @@ export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFor
         }
       }
 
-      // Step 3: Build the PRD request message
+      // Step 4: Build the PRD request message
       let requestMessage = `Product Title: ${title}\n\nDescription: ${description}\n\nPriority: ${priority}`;
 
       // Add mockup context if available
@@ -196,8 +213,8 @@ export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFor
         requestMessage += `\n\nPlease include the following sections: ${enabledOptions.join(', ')}`;
       }
 
-      // Step 4: Trigger the WebSocket-based generation
-      await sendMessage(requestMessage);
+      // Step 5: Trigger the WebSocket-based generation with actual PRD request ID
+      await sendMessage(requestMessage, requestId);
 
       // Notify parent if callback provided
       if (onGenerate) {
@@ -296,6 +313,13 @@ export function PRDConfigurationForm({ onGenerate, onBack }: PRDConfigurationFor
             <ProviderSelector
               value={provider}
               onChange={setProvider}
+              disabled={isGenerating}
+            />
+
+            {/* Codebase Context */}
+            <CodebaseSelector
+              value={codebaseId}
+              onChange={setCodebaseId}
               disabled={isGenerating}
             />
 
