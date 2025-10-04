@@ -50,3 +50,34 @@ export type GitHubIndexResponse = {
   indexingStatus: string;
   message: string;
 };
+
+// PRD Enrichment Types (RAG Integration)
+export type RelevantCodeChunk = {
+  filePath: string;
+  content: string;
+  chunkType: string;
+  language: string;
+  symbols: string[];
+  similarity: number;
+  lineRange: string;
+};
+
+export type TechStackSummary = {
+  languages: Record<string, number>;
+  frameworks: string[];
+  primaryLanguage?: string;
+};
+
+export type PRDEnrichmentRequest = {
+  prdDescription: string;
+  codebaseId: string;
+  maxChunks?: number;
+  similarityThreshold?: number;
+};
+
+export type PRDEnrichmentResponse = {
+  codeContext: string;
+  relevantChunks: RelevantCodeChunk[];
+  techStack: TechStackSummary;
+  architecturePatterns: string[];
+};

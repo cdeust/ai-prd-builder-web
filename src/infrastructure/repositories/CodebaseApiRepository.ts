@@ -9,7 +9,9 @@ import type {
   SearchResult,
   IndexingStatus,
   GitHubIndexRequest,
-  GitHubIndexResponse
+  GitHubIndexResponse,
+  PRDEnrichmentRequest,
+  PRDEnrichmentResponse
 } from '../../domain/entities/Codebase.ts';
 
 // API DTOs with string dates (as received from JSON)
@@ -76,6 +78,13 @@ export class CodebaseApiRepository implements ICodebaseRepository {
 
   async unlinkCodebaseFromPRD(codebaseId: string, prdId: string): Promise<void> {
     await this.apiClient.delete(`/api/v1/codebases/${codebaseId}/link-prd/${prdId}`);
+  }
+
+  async enrichPRDWithCodebase(request: PRDEnrichmentRequest): Promise<PRDEnrichmentResponse> {
+    return await this.apiClient.post<PRDEnrichmentResponse>(
+      '/api/v1/codebases/enrich-prd',
+      request
+    );
   }
 
   // Helper to parse date strings to Date objects

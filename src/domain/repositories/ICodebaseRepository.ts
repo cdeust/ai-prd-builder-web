@@ -3,7 +3,9 @@ import type {
   SearchResult,
   IndexingStatus,
   GitHubIndexRequest,
-  GitHubIndexResponse
+  GitHubIndexResponse,
+  PRDEnrichmentRequest,
+  PRDEnrichmentResponse
 } from '../entities/Codebase';
 
 export type CreateCodebaseDTO = {
@@ -35,4 +37,7 @@ export interface ICodebaseRepository {
   // PRD Linking
   linkCodebaseToPRD(codebaseId: string, prdId: string): Promise<void>;
   unlinkCodebaseFromPRD(codebaseId: string, prdId: string): Promise<void>;
+
+  // RAG / PRD Enrichment
+  enrichPRDWithCodebase(request: PRDEnrichmentRequest): Promise<PRDEnrichmentResponse>;
 }
